@@ -1,3 +1,6 @@
 node_modules
 .history
-secrets.ts
+output
+*.ts
+*.js
+*.md
