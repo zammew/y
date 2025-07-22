@@ -294,7 +294,7 @@ loopall() {
 find . -type f \( \
   -name "*.mp4" -o -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" -o \
   -name "*.json" -o -name "*.md" -o -name "*.png" -o -name "*.jpg" -o -name "*.cjs" -o \
-  -name "*.astro" -o -name "*.bash" -o -name ".clinerules" -o -name "*.cursorrules" -o \
+  -name "*.astro" -o -name "*.bash" -o -name "*config.mjs" -o -name ".env.example" -o -name "*config.mts" -o -name "pnpm-lock.yaml" -o -name ".clinerules" -o -name "*.cursorrules" -o \
   -name "*.kilocoderules" \)    -not -path "*/.*/*" -not -path "*/node_modules/*" -print0 |
   while IFS= read -r -d '' file; do
     "$cmder" "$file" &
