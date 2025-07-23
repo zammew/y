@@ -374,4 +374,36 @@ looprenameenc2() {
 }
 
 
+# Function to create a symlink to this script in the npm bin directory
+link() {
+  SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+  NPM_BIN=$(pnpm bin -g)
+  CMD_NAME=$(basename "$SCRIPT_PATH")
+  CMD_NAME="${CMD_NAME%.*}"  # Strip extension
+  LINK_PATH="$NPM_BIN/$CMD_NAME"
+
+  echo "🔗 Linking $SCRIPT_PATH → $LINK_PATH"
+  ln -sf "$SCRIPT_PATH" "$LINK_PATH"
+  chmod +x "$SCRIPT_PATH"
+  echo "✅ Now you can run '$CMD_NAME' from anywhere."
+}
+
+# Function to remove the symlink
+unlink() {
+  SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+  NPM_BIN=$(pnpm bin -g)
+  CMD_NAME=$(basename "$SCRIPT_PATH")
+  CMD_NAME="${CMD_NAME%.*}"
+  LINK_PATH="$NPM_BIN/$CMD_NAME"
+
+  if [[ -L "$LINK_PATH" ]]; then
+    echo "❌ Unlinking $LINK_PATH"
+    rm "$LINK_PATH"
+    echo "✅ Unlinked '$CMD_NAME'."
+  else
+    echo "⚠️ No link found at $LINK_PATH"
+  fi
+}
+
+
 "$@"
