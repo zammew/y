@@ -406,8 +406,51 @@ unlink() {
 }
 
 # for session
-setpw(){
-  read -s -p "Password: " password && echo && export password
+setpw() {
+  read -s -p "Password: " pw && echo
+  export password="$pw"
 }
+
+
+setbashrc() {
+  # for setting api key
+  local KEY="$1"
+  local VALUE="$2"
+
+  # Check arguments
+  if [ -z "$KEY" ] || [ -z "$VALUE" ]; then
+    echo "Usage: set_bashrc_var VAR_NAME VAR_VALUE"
+    return 1
+  fi
+
+  # Determine appropriate RC file
+  local RC_FILE=""
+  for file in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
+    if [ -f "$file" ]; then
+      RC_FILE="$file"
+      break
+    fi
+  done
+
+  # If no file found, default to .bashrc
+  if [ -z "$RC_FILE" ]; then
+    RC_FILE="$HOME/.bashrc"
+    touch "$RC_FILE"
+  fi
+
+  # Escape VALUE for sed
+  local ESCAPED_VALUE
+  ESCAPED_VALUE=$(printf '%s\n' "$VALUE" | sed -e 's/[\/&]/\\&/g')
+
+  # Update or add
+  if grep -qE "^export[ ]+$KEY=" "$RC_FILE"; then
+    sed -i "s/^export[ ]\+$KEY=.*/export $KEY=\"$ESCAPED_VALUE\"/" "$RC_FILE"
+    echo "🔁 Updated $KEY in $RC_FILE"
+  else
+    echo "export $KEY=\"$VALUE\"" >> "$RC_FILE"
+    echo "➕ Added $KEY to $RC_FILE"
+  fi
+}
+
 
 "$@"
