@@ -405,5 +405,9 @@ unlink() {
   fi
 }
 
+# for session
+setpw(){
+  read -s -p "Password: " password && echo && export password
+}
 
 "$@"
