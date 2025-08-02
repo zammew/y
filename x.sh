@@ -452,5 +452,82 @@ setbashrc() {
   fi
 }
 
+sourcebin_deprecate() {
+  local src="$1"
+  local bin_dir="$HOME/bin"
+  local bashrc="$HOME/.bashrc"
+
+  if [[ ! -f "$src" ]]; then
+    echo "❌ File not found: $src"
+    return 1
+  fi
+
+  mkdir -p "$bin_dir"
+
+  local filename="$(basename "$src")"
+  local target="$bin_dir/$filename"
+
+  cp "$src" "$target"
+  chmod +x "$target"
+  echo "📄 Installed: $src → $target"
+
+  # Check if exact `source "$target"` line exists (quoted)
+  local source_line="source \"$target\""
+  if grep -Fxq "$source_line" "$bashrc"; then
+    echo "🟡 Already sourced in $bashrc — skipping."
+  else
+    echo "➕ Adding source line to $bashrc..."
+    echo "$source_line" >> "$bashrc"
+    echo "✅ Appended."
+  fi
+}
+
+catbashrc(){
+  cat ~/.bashrc
+}
+
+# put the file besides .bashrc and source it, to overwrite need consistent filename xx.sh 
+sourcebashrc() {
+  local src="$1"
+  local bashrc="$HOME/.bashrc"
+  local bashrc_dir="$(dirname "$bashrc")"
+
+  if [[ ! -f "$src" ]]; then
+    echo "❌ File not found: $src"
+    return 1
+  fi
+
+  # Ensure .bashrc exists
+  if [[ ! -f "$bashrc" ]]; then
+    echo "⚠️  $bashrc not found — creating it..."
+    touch "$bashrc"
+  fi
+
+  # Determine destination path (same dir as .bashrc)
+  local filename="$(basename "$src")"
+  local target="$bashrc_dir/$filename"
+
+  # Copy script next to .bashrc
+  cp "$src" "$target"
+  chmod +x "$target"
+  echo "📄 Copied $src → $target"
+
+  # Generate source line with file check
+  local relative_source="[ -f ./$filename ] && source ./$filename"
+
+  # Check if .bashrc already includes this line
+  if grep -Fxq "$relative_source" "$bashrc"; then
+    echo "🟡 Already sourced: $relative_source"
+  else
+    echo "➕ Appending $relative_source to $bashrc"
+    echo "$relative_source" >> "$bashrc"
+    echo "✅ Done."
+  fi
+}
+
+# change dir to wsl from other OS_SHELLS
+wsl(){
+    wsl.exe --cd "$(pwd -W)"
+}
 
 "$@"
