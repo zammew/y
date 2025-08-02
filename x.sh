@@ -513,7 +513,7 @@ sourcebashrc() {
   echo "📄 Copied $src → $target"
 
   # Generate source line with file check
-  local relative_source="[ -f ./$filename ] && source ./$filename"
+  local relative_source="[ -f ~/$filename ] && source ~/$filename"
 
   # Check if .bashrc already includes this line
   if grep -Fxq "$relative_source" "$bashrc"; then
