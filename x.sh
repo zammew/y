@@ -374,4 +374,160 @@ looprenameenc2() {
 }
 
 
+# Function to create a symlink to this script in the npm bin directory
+link() {
+  SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+  NPM_BIN=$(pnpm bin -g)
+  CMD_NAME=$(basename "$SCRIPT_PATH")
+  CMD_NAME="${CMD_NAME%.*}"  # Strip extension
+  LINK_PATH="$NPM_BIN/$CMD_NAME"
+
+  echo "🔗 Linking $SCRIPT_PATH → $LINK_PATH"
+  ln -sf "$SCRIPT_PATH" "$LINK_PATH"
+  chmod +x "$SCRIPT_PATH"
+  echo "✅ Now you can run '$CMD_NAME' from anywhere."
+}
+
+# Function to remove the symlink
+unlink() {
+  SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+  NPM_BIN=$(pnpm bin -g)
+  CMD_NAME=$(basename "$SCRIPT_PATH")
+  CMD_NAME="${CMD_NAME%.*}"
+  LINK_PATH="$NPM_BIN/$CMD_NAME"
+
+  if [[ -L "$LINK_PATH" ]]; then
+    echo "❌ Unlinking $LINK_PATH"
+    rm "$LINK_PATH"
+    echo "✅ Unlinked '$CMD_NAME'."
+  else
+    echo "⚠️ No link found at $LINK_PATH"
+  fi
+}
+
+# for session
+setpw() {
+  read -s -p "Password: " pw && echo
+  export password="$pw"
+}
+
+
+setbashrc() {
+  # for setting api key
+  local KEY="$1"
+  local VALUE="$2"
+
+  # Check arguments
+  if [ -z "$KEY" ] || [ -z "$VALUE" ]; then
+    echo "Usage: set_bashrc_var VAR_NAME VAR_VALUE"
+    return 1
+  fi
+
+  # Determine appropriate RC file
+  local RC_FILE=""
+  for file in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
+    if [ -f "$file" ]; then
+      RC_FILE="$file"
+      break
+    fi
+  done
+
+  # If no file found, default to .bashrc
+  if [ -z "$RC_FILE" ]; then
+    RC_FILE="$HOME/.bashrc"
+    touch "$RC_FILE"
+  fi
+
+  # Escape VALUE for sed
+  local ESCAPED_VALUE
+  ESCAPED_VALUE=$(printf '%s\n' "$VALUE" | sed -e 's/[\/&]/\\&/g')
+
+  # Update or add
+  if grep -qE "^export[ ]+$KEY=" "$RC_FILE"; then
+    sed -i "s/^export[ ]\+$KEY=.*/export $KEY=\"$ESCAPED_VALUE\"/" "$RC_FILE"
+    echo "🔁 Updated $KEY in $RC_FILE"
+  else
+    echo "export $KEY=\"$VALUE\"" >> "$RC_FILE"
+    echo "➕ Added $KEY to $RC_FILE"
+  fi
+}
+
+sourcebin_deprecate() {
+  local src="$1"
+  local bin_dir="$HOME/bin"
+  local bashrc="$HOME/.bashrc"
+
+  if [[ ! -f "$src" ]]; then
+    echo "❌ File not found: $src"
+    return 1
+  fi
+
+  mkdir -p "$bin_dir"
+
+  local filename="$(basename "$src")"
+  local target="$bin_dir/$filename"
+
+  cp "$src" "$target"
+  chmod +x "$target"
+  echo "📄 Installed: $src → $target"
+
+  # Check if exact `source "$target"` line exists (quoted)
+  local source_line="source \"$target\""
+  if grep -Fxq "$source_line" "$bashrc"; then
+    echo "🟡 Already sourced in $bashrc — skipping."
+  else
+    echo "➕ Adding source line to $bashrc..."
+    echo "$source_line" >> "$bashrc"
+    echo "✅ Appended."
+  fi
+}
+
+catbashrc(){
+  cat ~/.bashrc
+}
+
+# put the file besides .bashrc and source it, to overwrite need consistent filename xx.sh 
+sourcebashrc() {
+  local src="$1"
+  local bashrc="$HOME/.bashrc"
+  local bashrc_dir="$(dirname "$bashrc")"
+
+  if [[ ! -f "$src" ]]; then
+    echo "❌ File not found: $src"
+    return 1
+  fi
+
+  # Ensure .bashrc exists
+  if [[ ! -f "$bashrc" ]]; then
+    echo "⚠️  $bashrc not found — creating it..."
+    touch "$bashrc"
+  fi
+
+  # Determine destination path (same dir as .bashrc)
+  local filename="$(basename "$src")"
+  local target="$bashrc_dir/$filename"
+
+  # Copy script next to .bashrc
+  cp "$src" "$target"
+  chmod +x "$target"
+  echo "📄 Copied $src → $target"
+
+  # Generate source line with file check
+  local relative_source="[ -f ~/$filename ] && source ~/$filename"
+
+  # Check if .bashrc already includes this line
+  if grep -Fxq "$relative_source" "$bashrc"; then
+    echo "🟡 Already sourced: $relative_source"
+  else
+    echo "➕ Appending $relative_source to $bashrc"
+    echo "$relative_source" >> "$bashrc"
+    echo "✅ Done."
+  fi
+}
+
+# change dir to wsl from other OS_SHELLS
+wsl(){
+    wsl.exe --cd "$(pwd -W)"
+}
+
 "$@"
